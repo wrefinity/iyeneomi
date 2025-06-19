@@ -46,7 +46,7 @@ export default function ProjectsSection() {
         {/* Hero Image */}
         <div className="w-full h-64 md:h-80 rounded-lg overflow-hidden">
           <img
-            src="/ml3.jpeg"
+            src="/mlp.jpg"
             alt="AI/ML Engineering Work"
             className="w-full h-full object-cover"
           />

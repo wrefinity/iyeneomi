@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { Menu, X, Linkedin, Github, Youtube } from 'lucide-react';
 import { motion, AnimatePresence, stagger, useAnimate } from 'framer-motion';
@@ -88,11 +89,13 @@ export default function Header() {
               transition={{ duration: 0.5 }}
             >
               <div className="absolute inset-0 bg-gradient-to-r from-[#D4A574] to-[#FFD700] rounded-full opacity-0 hover:opacity-80 transition-opacity duration-300 blur-sm" />
-              <img
-                src="../ibologo.png"
-                alt="Logo"
-                className="h-10 w-auto object-contain"
-              />
+              <Image
+                  src="/ibologo.png" // Now using absolute path from public directory
+                  alt="Iyeneomi Blessing Ogoina Logo"
+                  width={48} // Explicit width
+                  height={48} // Explicit height
+                  className="transition-all duration-300 hover:rotate-3"
+                />
             </motion.div>
           </Link>
         </motion.div>
