@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, Variants } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 
 const projectData = [
@@ -24,7 +24,8 @@ const projectData = [
   },
 ];
 
-const fadeUp = {
+// Update fadeUp with proper typing
+const fadeUp: Variants = {
   hidden: { opacity: 0, y: 40 },
   visible: (i: number) => ({
     opacity: 1,
@@ -32,7 +33,8 @@ const fadeUp = {
     transition: {
       delay: i * 0.2,
       duration: 0.6,
-      ease: "easeOut",
+      // Use const assertion for valid easing value
+      ease: "easeOut" as const,
     },
   }),
 };
