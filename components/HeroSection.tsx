@@ -102,12 +102,12 @@ export default function HeroSection() {
                 <span className="relative z-10">
                   Data Analyst | AI Graduate | Maths & IT Educator
                 </span>
-                <motion.span 
+                {/* <motion.span 
                   className="absolute bottom-0 left-0 w-full h-1 bg-[#D4A574]"
                   initial={{ scaleX: 0 }}
                   animate={{ scaleX: 1 }}
                   transition={{ delay: 0.9, duration: 0.8 }}
-                />
+                /> */}
               </p>
             </motion.div>
           </div>

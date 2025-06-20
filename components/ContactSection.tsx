@@ -56,7 +56,8 @@ export default function ContactSection() {
           <p className="text-sm text-[#D4A574] font-medium mb-4 tracking-wide">
             LETS WORK TOGETHER
           </p>
-          <h2 className="text-4xl md:text-5xl font-bold text-black mb-6 underline decoration-[#D4A574] decoration-2 underline-offset-4">
+          {/* <h2 className="text-4xl md:text-5xl font-bold text-black mb-6 underline decoration-[#D4A574] decoration-2 underline-offset-4"> */}
+          <h2 className="text-4xl md:text-5xl font-bold text-black mb-6 ">
             Get in touch
           </h2>
           <p className="text-gray-700 text-lg max-w-2xl mx-auto">

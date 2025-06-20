@@ -1,12 +1,27 @@
 "use client";
 
-import { motion } from 'framer-motion';
 import Image from 'next/image';
-import { ArrowUp, Mail, Linkedin, Github, Youtube } from 'lucide-react';
+import Link from 'next/link';
+import { useState, useEffect } from 'react';
+import { Linkedin, Github, Youtube, ArrowUp, Mail } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { auth } from '@/lib/firebase';
+import { onAuthStateChanged } from 'firebase/auth';
 
 export default function Footer() {
+
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  // Check authentication state
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setIsAdmin(!!user);
+    });
+
+    return () => unsubscribe();
+  }, []);
   const currentYear = new Date().getFullYear();
-  
+
   const scrollToTop = () => {
     window.scrollTo({
       top: 0,
@@ -26,18 +41,20 @@ export default function Footer() {
       {/* Decorative elements */}
       <div className="absolute bottom-0 left-0 w-40 h-40 bg-[#D4A574] bg-opacity-5 rounded-full transform -translate-x-1/2 translate-y-1/2"></div>
       <div className="absolute top-0 right-0 w-60 h-60 bg-[#D4A574] bg-opacity-5 rounded-full transform translate-x-1/2 -translate-y-1/2"></div>
-      
+
       <div className="max-w-6xl mx-auto">
         <div className="grid md:grid-cols-2 gap-10 mb-12">
           {/* Left - Brand Info */}
           <div className="space-y-6">
-            <motion.div 
+            <motion.div
               className="flex items-center"
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5 }}
             >
               <div className="relative w-12 h-12">
+
+
                 <Image
                   src="/ibologo.png"
                   alt="Iyeneomi Blessing Ogoina Logo"
@@ -45,14 +62,15 @@ export default function Footer() {
                   objectFit="contain"
                   className="transition-all duration-300 hover:rotate-3"
                 />
+
               </div>
               <div className="ml-4">
                 <h3 className="text-xl font-bold text-black">Iyeneomi Blessing Ogoina</h3>
                 <p className="text-gray-600">Data Analyst | AI Graduate | Educator</p>
               </div>
             </motion.div>
-            
-            <motion.p 
+
+            <motion.p
               className="text-gray-700 max-w-md"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -60,8 +78,8 @@ export default function Footer() {
             >
               Transforming data into actionable insights and empowering others through education and technology.
             </motion.p>
-            
-            <motion.div 
+
+            <motion.div
               className="flex space-x-4"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -74,7 +92,7 @@ export default function Footer() {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm hover:shadow-md transition-all duration-300 group"
-                  whileHover={{ 
+                  whileHover={{
                     y: -5,
                     backgroundColor: '#D4A574',
                     color: 'white'
@@ -91,7 +109,7 @@ export default function Footer() {
               ))}
             </motion.div>
           </div>
-          
+
           {/* Right - Quick Links */}
           <div className="grid grid-cols-2 gap-8">
             <motion.div
@@ -103,8 +121,8 @@ export default function Footer() {
               <ul className="space-y-3">
                 {['Home', 'Projects', 'Blog', 'CV', 'Contact'].map((item, index) => (
                   <li key={index}>
-                    <a 
-                      href={`#${item.toLowerCase()}`} 
+                    <a
+                      href={`#${item.toLowerCase()}`}
                       className="text-gray-700 hover:text-[#D4A574] transition-colors flex items-center group"
                     >
                       <span className="group-hover:translate-x-1 transition-transform">
@@ -115,7 +133,7 @@ export default function Footer() {
                 ))}
               </ul>
             </motion.div>
-            
+
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -124,16 +142,16 @@ export default function Footer() {
               <h3 className="text-lg font-bold text-black mb-4">Contact</h3>
               <ul className="space-y-3">
                 <li>
-                  <a 
-                    href="mailto:iyonline30@gmail.com" 
+                  <a
+                    href="mailto:iyonline30@gmail.com"
                     className="text-gray-700 hover:text-[#D4A574] transition-colors flex items-center"
                   >
                     <Mail size={16} className="mr-2" /> iyonline30@gmail.com
                   </a>
                 </li>
                 <li>
-                  <a 
-                    href="tel:+1234567890" 
+                  <a
+                    href="tel:+1234567890"
                     className="text-gray-700 hover:text-[#D4A574] transition-colors flex items-center"
                   >
                     <span className="ml-0.5 mr-2">📱</span> +44 123 456 7890
@@ -146,31 +164,35 @@ export default function Footer() {
             </motion.div>
           </div>
         </div>
-        
+
         <div className="border-t border-[#D4A574] border-opacity-30 pt-8 flex flex-col md:flex-row justify-between items-center">
-          <motion.div 
+          <motion.div
             className="text-sm text-gray-600 mb-4 md:mb-0"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5, delay: 1 }}
           >
-            Copyright © {currentYear} Iyeneomi Blessing Ogoina. All rights reserved.
+            <Link
+              href={isAdmin ? "/admin/dashboard" : "/login"}
+              >
+              Copyright © {currentYear} Iyeneomi Blessing Ogoina. All rights reserved.
+            </Link>
           </motion.div>
-          
+
           <motion.div
             className="flex space-x-6"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5, delay: 1.2 }}
           >
-            <a 
-              href="#" 
+            <a
+              href="#"
               className="text-sm text-gray-600 hover:text-[#D4A574] transition-colors"
             >
               Privacy Policy
             </a>
-            <a 
-              href="#" 
+            <a
+              href="#"
               className="text-sm text-gray-600 hover:text-[#D4A574] transition-colors"
             >
               Terms of Service
@@ -178,12 +200,12 @@ export default function Footer() {
           </motion.div>
         </div>
       </div>
-      
+
       {/* Scroll to top button */}
       <motion.button
         onClick={scrollToTop}
         className="fixed bottom-6 right-6 w-12 h-12 bg-[#D4A574] text-white flex items-center justify-center rounded-full shadow-lg z-50"
-        whileHover={{ 
+        whileHover={{
           scale: 1.1,
           backgroundColor: '#C08A5A',
           boxShadow: '0 5px 15px rgba(0,0,0,0.2)'
@@ -196,16 +218,16 @@ export default function Footer() {
       >
         <motion.div
           animate={{ y: [0, -3, 0] }}
-          transition={{ 
-            duration: 1, 
+          transition={{
+            duration: 1,
             repeat: Infinity,
-            repeatType: "reverse" 
+            repeatType: "reverse"
           }}
         >
           <ArrowUp size={20} />
         </motion.div>
       </motion.button>
-      
+
       {/* Floating particles */}
       {[...Array(8)].map((_, i) => (
         <motion.div
@@ -217,13 +239,13 @@ export default function Footer() {
             left: `${Math.random() * 100}%`,
             bottom: `${Math.random() * 30}%`,
           }}
-          animate={{ 
+          animate={{
             y: [0, -20, 0],
             x: [0, Math.random() > 0.5 ? 10 : -10, 0],
             opacity: [0.4, 0.8, 0.4]
           }}
-          transition={{ 
-            duration: 3 + Math.random() * 3, 
+          transition={{
+            duration: 3 + Math.random() * 3,
             repeat: Infinity,
             delay: Math.random() * 2
           }}
