@@ -58,8 +58,8 @@ export default function Footer() {
                 <Image
                   src="/ibologo.png"
                   alt="Iyeneomi Blessing Ogoina Logo"
-                  layout="fill"
-                  objectFit="contain"
+                  fill
+                  style={{objectFit: "contain"}}
                   className="transition-all duration-300 hover:rotate-3"
                 />
 

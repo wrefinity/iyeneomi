@@ -13,7 +13,10 @@ import {
 
 import {
   addProject, addSkill, getProjects, getSkills, deleteProject, deleteSkill,
-  addExperience, addEducation, getExperiences, getEducation, deleteExperience, deleteEducation
+  addExperience, addEducation, getExperiences, getEducation, deleteExperience, deleteEducation,
+  getHeroImage, setHeroImage as setHeroImageInFirestore,
+  addBlog, getBlogs, deleteBlog,
+  deleteHeroImage
 } from '@/lib/firestore';
 import { CldUploadWidget } from 'next-cloudinary';
 
@@ -28,7 +31,7 @@ export default function AdminDashboard() {
   
   // Form states
   const [newProject, setNewProject] = useState({
-    title: '', desc: '', stack: '', image: ''
+    title: '', desc: '', stack: '', image: '', video: ''
   });
   const [newSkill, setNewSkill] = useState({
     name: '', proficiency: 85
@@ -39,12 +42,15 @@ export default function AdminDashboard() {
   const [newEducation, setNewEducation] = useState({
     degree: '', institution: '', period: '', description: ''
   });
+  const [heroImage, setHeroImage] = useState('');
+  const [newBlog, setNewBlog] = useState({ title: '', content: '', image: '', date: '' });
   
   // Data states
   const [projects, setProjects] = useState<any[]>([]);
   const [skills, setSkills] = useState<any[]>([]);
   const [experiences, setExperiences] = useState<any[]>([]);
   const [education, setEducation] = useState<any[]>([]);
+  const [blogs, setBlogs] = useState<any[]>([]);
 
   useEffect(() => {
     // Check authentication
@@ -66,18 +72,24 @@ export default function AdminDashboard() {
         projectsData, 
         skillsData, 
         experiencesData, 
-        educationData
+        educationData,
+        heroImageData,
+        blogsData
       ] = await Promise.all([
         getProjects(),
         getSkills(),
         getExperiences(),
-        getEducation()
+        getEducation(),
+        getHeroImage(),
+        getBlogs()
       ]);
       
       setProjects(projectsData);
       setSkills(skillsData);
       setExperiences(experiencesData);
       setEducation(educationData);
+      setHeroImage(heroImageData);
+      setBlogs(blogsData);
     } catch (error) {
       console.error('Error fetching data:', error);
       setUploadError('Failed to fetch data');
@@ -105,7 +117,7 @@ export default function AdminDashboard() {
     try {
       await addProject(newProject);
       setSuccessMessage('Project added successfully!');
-      setNewProject({ title: '', desc: '', stack: '', image: '' });
+      setNewProject({ title: '', desc: '', stack: '', image: '', video: '' });
       fetchData();
     } catch (error) {
       console.error('Error adding project:', error);
@@ -172,13 +184,51 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleHeroImageSubmit = async () => {
+    setIsUploading(true);
+    setSuccessMessage('');
+    setUploadError('');
+
+    try {
+      await setHeroImageInFirestore(heroImage);
+      setSuccessMessage('Hero image updated successfully!');
+    } catch (error) {
+      console.error('Error updating hero image:', error);
+      setUploadError('Failed to update hero image. Please try again.');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleBlogSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsUploading(true);
+    setSuccessMessage('');
+    setUploadError('');
+
+    try {
+      await addBlog({ ...newBlog, date: new Date().toISOString() });
+      
+      setSuccessMessage('Blog post added successfully!');
+      setNewBlog({ title: '', content: '', image: '', date: '' });
+      fetchData();
+    } catch (error) {
+      console.error('Error adding blog post:', error);
+      setUploadError('Failed to add blog post. Please try again.');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   // Delete handlers
   const handleDelete = async (type: string, id: string) => {
     const typeNames: Record<string, string> = {
       project: 'project',
       skill: 'skill',
       experience: 'experience',
-      education: 'education'
+      education: 'education',
+      blog: 'blog',
+      hero: 'hero image'
     };
     
     if (!confirm(`Are you sure you want to delete this ${typeNames[type]}?`)) return;
@@ -198,6 +248,12 @@ export default function AdminDashboard() {
           break;
         case 'education':
           await deleteEducation(id);
+          break;
+        case 'blog':
+          await deleteBlog(id);
+          break;
+        case 'hero':
+          await deleteHeroImage();
           break;
       }
       
@@ -266,6 +322,8 @@ export default function AdminDashboard() {
           <TabButton name="skills" icon={Award} label="Skills" />
           <TabButton name="experiences" icon={Briefcase} label="Experiences" />
           <TabButton name="education" icon={GraduationCap} label="Education" />
+          <TabButton name="hero" icon={PhotoIcon} label="Hero" />
+          <TabButton name="blogs" icon={Briefcase} label="Blogs" />
         </div>
 
         {/* Messages */}
@@ -341,54 +399,108 @@ export default function AdminDashboard() {
                 </div>
 
                 <div>
-                  <label className="block text-gray-700 mb-2">Project Image</label>
-                  {newProject.image ? (
-                    <div className="relative">
-                      <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 flex flex-col items-center justify-center">
-                        <div className="relative h-40 w-full">
-                          <Image
-                            src={newProject.image}
-                            alt="Project preview"
-                            fill
-                            className="rounded-lg object-cover"
-                          />
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => setNewProject({ ...newProject, image: '' })}
-                          className="text-red-600 hover:text-red-800 flex items-center mt-3"
-                        >
-                          <X size={16} className="mr-1" /> Remove image
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <CldUploadWidget
-                      uploadPreset={process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET}
-                      onSuccess={(result: any) => {
-                        setNewProject({ ...newProject, image: result.info.secure_url });
-                      }}
-                      options={{
-                        sources: ['local', 'url', 'camera'],
-                        multiple: false,
-                        cropping: true,
-                        croppingAspectRatio: 1.77,
-                      }}
-                    >
-                      {({ open }) => (
-                        <div
-                          className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-[#D4A574] transition-colors"
-                          onClick={() => open()}
-                        >
-                          <div className="flex flex-col items-center">
-                            <UploadCloud className="text-gray-400 mb-3" size={32} />
-                            <p className="text-gray-600 mb-1">Click to upload an image</p>
-                            <p className="text-gray-500 text-sm">Supports JPG, PNG, WEBP (Max 5MB)</p>
+                  <label className="block text-gray-700 mb-2">Project Media</label>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-gray-700 mb-2">Image</label>
+                      {newProject.image ? (
+                        <div className="relative">
+                          <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 flex flex-col items-center justify-center">
+                            <div className="relative h-40 w-full">
+                              <Image
+                                src={newProject.image}
+                                alt="Project preview"
+                                fill
+                                className="rounded-lg object-cover"
+                              />
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setNewProject(prevState => ({ ...prevState, image: '' }))}
+                              className="text-red-600 hover:text-red-800 flex items-center mt-3"
+                            >
+                              <X size={16} className="mr-1" /> Remove image
+                            </button>
                           </div>
                         </div>
+                      ) : (
+                        <CldUploadWidget
+                          uploadPreset={process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET}
+                          onSuccess={(result: any) => {
+                            setNewProject(prevState => ({ ...prevState, image: result.info.secure_url }));
+                          }}
+                          options={{
+                            sources: ['local', 'url', 'camera'],
+                            multiple: false,
+                            cropping: true,
+                            croppingAspectRatio: 1.77,
+                            resourceType: 'image'
+                          }}
+                        >
+                          {({ open }) => (
+                            <div
+                              className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-[#D4A574] transition-colors"
+                              onClick={() => open()}
+                            >
+                              <div className="flex flex-col items-center">
+                                <UploadCloud className="text-gray-400 mb-3" size={32} />
+                                <p className="text-gray-600 mb-1">Click to upload an image</p>
+                                <p className="text-gray-500 text-sm">Supports JPG, PNG, WEBP</p>
+                              </div>
+                            </div>
+                          )}
+                        </CldUploadWidget>
                       )}
-                    </CldUploadWidget>
-                  )}
+                    </div>
+                    <div>
+                      <label className="block text-gray-700 mb-2">Video</label>
+                      {newProject.video ? (
+                        <div className="relative">
+                          <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 flex flex-col items-center justify-center">
+                            <div className="relative h-40 w-full">
+                              <video
+                                src={newProject.video}
+                                controls
+                                className="rounded-lg object-cover w-full h-full"
+                              />
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setNewProject(prevState => ({ ...prevState, video: '' }))}
+                              className="text-red-600 hover:text-red-800 flex items-center mt-3"
+                            >
+                              <X size={16} className="mr-1" /> Remove video
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <CldUploadWidget
+                          uploadPreset={process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET}
+                          onSuccess={(result: any) => {
+                            setNewProject(prevState => ({ ...prevState, video: result.info.secure_url }));
+                          }}
+                          options={{
+                            sources: ['local', 'url', 'camera'],
+                            multiple: false,
+                            resourceType: 'video'
+                          }}
+                        >
+                          {({ open }) => (
+                            <div
+                              className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-[#D4A574] transition-colors"
+                              onClick={() => open()}
+                            >
+                              <div className="flex flex-col items-center">
+                                <UploadCloud className="text-gray-400 mb-3" size={32} />
+                                <p className="text-gray-600 mb-1">Click to upload a video</p>
+                                <p className="text-gray-500 text-sm">Supports MP4, MOV, etc.</p>
+                              </div>
+                            </div>
+                          )}
+                        </CldUploadWidget>
+                      )}
+                    </div>
+                  </div>
                 </div>
 
                 <button
@@ -447,6 +559,11 @@ export default function AdminDashboard() {
                                     className="h-10 w-10 rounded-full object-cover"
                                     src={project.image}
                                     alt={project.title}
+                                  />
+                                ) : project.video ? (
+                                  <video
+                                    className="h-10 w-10 rounded-full object-cover"
+                                    src={project.video}
                                   />
                                 ) : (
                                   <div className="bg-gray-200 border-2 border-dashed rounded-full w-10 h-10 flex items-center justify-center">
@@ -891,6 +1008,282 @@ export default function AdminDashboard() {
                           <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
                             <button
                               onClick={() => handleDelete('education', edu.id)}
+                              className="text-red-600 hover:text-red-900 flex items-center justify-end w-full"
+                              disabled={isUploading}
+                            >
+                              <Trash2 size={18} className="mr-1" />
+                              <span>Delete</span>
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+
+        {/* Hero Section */}
+        {activeTab === 'hero' && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.1 }}
+            className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-8"
+          >
+            <div className="bg-white rounded-xl shadow-md p-6">
+              <h2 className="text-xl font-bold text-gray-800 mb-6 flex items-center">
+                <PhotoIcon className="text-[#D4A574] mr-2" size={20} />
+                Manage Hero Image
+              </h2>
+
+              <div>
+                <label className="block text-gray-700 mb-2">Hero Image</label>
+                {heroImage ? (
+                  <div className="relative">
+                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 flex flex-col items-center justify-center">
+                      <div className="relative h-40 w-full">
+                        <Image
+                          src={heroImage}
+                          alt="Hero preview"
+                          fill
+                          className="rounded-lg object-cover"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setHeroImage('')}
+                        className="text-red-600 hover:text-red-800 flex items-center mt-3"
+                      >
+                        <X size={16} className="mr-1" /> Remove image
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <CldUploadWidget
+                    uploadPreset={process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET}
+                    onSuccess={(result: any) => {
+                      setHeroImage(result.info.secure_url);
+                    }}
+                    options={{
+                      sources: ['local', 'url', 'camera'],
+                      multiple: false,
+                      cropping: true,
+                      croppingAspectRatio: 1.77,
+                      resourceType: 'image'
+                    }}
+                  >
+                    {({ open }) => (
+                      <div
+                        className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-[#D4A574] transition-colors"
+                        onClick={() => open()}
+                      >
+                        <div className="flex flex-col items-center">
+                          <UploadCloud className="text-gray-400 mb-3" size={32} />
+                          <p className="text-gray-600 mb-1">Click to upload an image</p>
+                          <p className="text-gray-500 text-sm">Supports JPG, PNG, WEBP</p>
+                        </div>
+                      </div>
+                    )}
+                  </CldUploadWidget>
+                )}
+              </div>
+
+              <button
+                onClick={handleHeroImageSubmit}
+                disabled={isUploading || !heroImage}
+                className={`w-full mt-6 py-3 px-6 bg-[#D4A574] text-white font-medium rounded-lg transition-all hover:bg-[#C08A5A] flex items-center justify-center ${
+                  isUploading || !heroImage ? 'opacity-70 cursor-not-allowed' : ''
+                }`}
+              >
+                {isUploading ? (
+                  <div className="w-5 h-5 border-t-2 border-white rounded-full animate-spin"></div>
+                ) : (
+                  'Save Hero Image'
+                )}
+              </button>
+              <button
+                onClick={() => handleDelete('hero', 'heroImage')}
+                disabled={isUploading || !heroImage}
+                className={`w-full mt-2 py-3 px-6 bg-red-600 text-white font-medium rounded-lg transition-all hover:bg-red-800 flex items-center justify-center ${
+                  isUploading || !heroImage ? 'opacity-70 cursor-not-allowed' : ''
+                }`}
+              >
+                {isUploading ? (
+                  <div className="w-5 h-5 border-t-2 border-white rounded-full animate-spin"></div>
+                ) : (
+                  'Delete Hero Image'
+                )}
+              </button>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Blogs Section */}
+        {activeTab === 'blogs' && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.1 }}
+            className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-8"
+          >
+            {/* Add Blog Form */}
+            <div className="bg-white rounded-xl shadow-md p-6">
+              <h2 className="text-xl font-bold text-gray-800 mb-6 flex items-center">
+                <PlusCircle className="text-[#D4A574] mr-2" size={20} />
+                Add New Blog Post
+              </h2>
+
+              <form onSubmit={handleBlogSubmit} className="space-y-6">
+                <div>
+                  <label className="block text-gray-700 mb-2">Blog Title</label>
+                  <input
+                    type="text"
+                    value={newBlog.title}
+                    onChange={(e) => setNewBlog({ ...newBlog, title: e.target.value })}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D4A574] focus:border-transparent"
+                    placeholder="My First Blog Post"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-gray-700 mb-2">Content</label>
+                  <textarea
+                    value={newBlog.content}
+                    onChange={(e) => setNewBlog({ ...newBlog, content: e.target.value })}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D4A574] focus:border-transparent min-h-[120px]"
+                    placeholder="This is my first blog post..."
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-gray-700 mb-2">Blog Image</label>
+                  {newBlog.image ? (
+                    <div className="relative">
+                      <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 flex flex-col items-center justify-center">
+                        <div className="relative h-40 w-full">
+                          <Image
+                            src={newBlog.image}
+                            alt="Blog preview"
+                            fill
+                            className="rounded-lg object-cover"
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setNewBlog({ ...newBlog, image: '' })}
+                          className="text-red-600 hover:text-red-800 flex items-center mt-3"
+                        >
+                          <X size={16} className="mr-1" /> Remove image
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <CldUploadWidget
+                      uploadPreset={process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET}
+                      onSuccess={(result: any) => {
+                        setNewBlog(prevState => ({ ...prevState, image: result.info.secure_url }));
+                      }}
+                      options={{
+                        sources: ['local', 'url', 'camera'],
+                        multiple: false,
+                        cropping: true,
+                        croppingAspectRatio: 1.77,
+                        resourceType: 'image'
+                      }}
+                    >
+                      {({ open }) => (
+                        <div
+                          className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-[#D4A574] transition-colors"
+                          onClick={() => open()}
+                        >
+                          <div className="flex flex-col items-center">
+                            <UploadCloud className="text-gray-400 mb-3" size={32} />
+                            <p className="text-gray-600 mb-1">Click to upload an image</p>
+                            <p className="text-gray-500 text-sm">Supports JPG, PNG, WEBP</p>
+                          </div>
+                        </div>
+                      )}
+                    </CldUploadWidget>
+                  )}
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={isUploading}
+                  className={`w-full py-3 px-6 bg-[#D4A574] text-white font-medium rounded-lg transition-all hover:bg-[#C08A5A] flex items-center justify-center ${
+                    isUploading ? 'opacity-70 cursor-not-allowed' : ''
+                  }`}
+                >
+                  {isUploading ? (
+                    <div className="w-5 h-5 border-t-2 border-white rounded-full animate-spin"></div>
+                  ) : (
+                    'Add Blog Post'
+                  )}
+                </button>
+              </form>
+            </div>
+
+            {/* Blogs Table */}
+            <div className="bg-white rounded-xl shadow-md p-6">
+              <h2 className="text-xl font-bold text-gray-800 mb-6 flex items-center">
+                <Database className="text-[#D4A574] mr-2" size={20} />
+                Existing Blog Posts ({blogs.length})
+              </h2>
+
+              {isLoading ? (
+                <div className="flex justify-center py-10">
+                  <div className="w-8 h-8 border-t-2 border-[#D4A574] rounded-full animate-spin"></div>
+                </div>
+              ) : blogs.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <p>No blog posts found. Add your first blog post!</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead>
+                      <tr>
+                        <th className="px-4 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Blog Post
+                        </th>
+                        <th className="px-4 py-3 bg-gray-50 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Actions
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {blogs.map((blog) => (
+                        <tr key={blog.id} className="hover:bg-gray-50">
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            <div className="flex items-center">
+                              <div className="flex-shrink-0 h-10 w-10">
+                                {blog.image ? (
+                                  <img
+                                    className="h-10 w-10 rounded-full object-cover"
+                                    src={blog.image}
+                                    alt={blog.title}
+                                  />
+                                ) : (
+                                  <div className="bg-gray-200 border-2 border-dashed rounded-full w-10 h-10 flex items-center justify-center">
+                                    <PhotoIcon className="text-gray-400" size={16} />
+                                  </div>
+                                )}
+                              </div>
+                              <div className="ml-4">
+                                <div className="text-sm font-medium text-gray-900 truncate max-w-xs">
+                                  {blog.title}
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
+                            <button
+                              onClick={() => handleDelete('blog', blog.id)}
                               className="text-red-600 hover:text-red-900 flex items-center justify-end w-full"
                               disabled={isUploading}
                             >

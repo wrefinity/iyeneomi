@@ -2,10 +2,27 @@
 
 import { motion, useAnimation } from 'framer-motion';
 import { Mail, Linkedin, ArrowDown, Sparkles } from 'lucide-react';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { getHeroImage } from '@/lib/firestore';
 
 export default function HeroSection() {
   const controls = useAnimation();
+  const [heroImage, setHeroImage] = useState('/iye.jpg');
+
+  useEffect(() => {
+    const fetchHeroImage = async () => {
+      try {
+        const imageUrl = await getHeroImage();
+        if (imageUrl) {
+          setHeroImage(imageUrl);
+        }
+      } catch (error) {
+        console.error('Error fetching hero image:', error);
+      }
+    };
+
+    fetchHeroImage();
+  }, []);
   
   useEffect(() => {
     // Sequence animations on load
@@ -250,7 +267,7 @@ export default function HeroSection() {
               <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black opacity-30 z-10" />
               
               <img
-                src="/iye.jpg"
+                src={heroImage}
                 alt="Iyeneomi Blessing Ogoina"
                 className="w-full h-full object-cover"
               />

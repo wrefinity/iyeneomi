@@ -1,34 +1,27 @@
 "use client";
 
 import { Calendar, ArrowRight } from 'lucide-react';
+import { getBlogs } from '@/lib/firestore';
+import { useState, useEffect } from 'react';
+
 
 export default function BlogSection() {
-  const blogPosts = [
-    {
-      id: 1,
-      title: "Leveraging AI in Healthcare: Electronic Patient Record Systems",
-      excerpt: "Exploring how artificial intelligence can transform healthcare through intelligent EPR systems and predictive analytics.",
-      date: "2024-01-15",
-      readTime: "8 min read",
-      image: "/ml6.jpeg"
-    },
-    {
-      id: 2,
-      title: "Data Analytics in Education: Improving Student Outcomes",
-      excerpt: "How data-driven approaches can enhance learning experiences and boost academic performance in mathematics education.",
-      date: "2024-01-08",
-      readTime: "6 min read",
-      image: "/ml4.jpeg"
-    },
-    {
-      id: 3,
-      title: "Financial Analytics: SQL Models for Business Optimization",
-      excerpt: "Building effective SQL models for rental pricing optimization and real-time business intelligence dashboards.",
-      date: "2023-12-20",
-      readTime: "10 min read",
-      image: "/ml5.webp"
-    }
-  ];
+  const [blogPosts, setBlogPosts] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchBlogs = async () => {
+      try {
+        const blogs = await getBlogs();
+        if (blogs.length > 0) {
+          setBlogPosts(blogs);
+        }
+      } catch (error) {
+        console.error('Error fetching blogs:', error);
+      }
+    };
+
+    fetchBlogs();
+  }, []);
 
   return (
     <section id="blog" className="bg-[#F5F3F0] py-20 px-4 md:px-8">

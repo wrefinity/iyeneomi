@@ -5,7 +5,9 @@ import {
   addDoc, 
   getDocs, 
   doc, 
-  deleteDoc 
+  deleteDoc, 
+  setDoc,
+  getDoc
 } from 'firebase/firestore';
 
 // Add a new project
@@ -101,6 +103,13 @@ interface Skill {
   proficiency: number;
 }
 
+interface Blog {
+  id: string;
+  title: string;
+  content: string;
+  image: string;
+}
+
 // Add experience
 export const addExperience = async (experience: {
   title: string;
@@ -153,4 +162,81 @@ export const deleteExperience = async (id: string) => {
 // Delete an education entry
 export const deleteEducation = async (id: string) => {
   await deleteDoc(doc(db, 'education', id));
+};
+
+// Get the hero image
+export const getHeroImage = async () => {
+  try {
+    const docRef = doc(db, 'hero', 'heroImage');
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+      return docSnap.data().imageUrl;
+    } else {
+      return null;
+    }
+  } catch (error) {
+    console.error('Error getting hero image: ', error);
+    throw error;
+  }
+};
+
+// Set the hero image
+export const setHeroImage = async (imageUrl: string) => {
+  try {
+    await setDoc(doc(db, 'hero', 'heroImage'), { imageUrl });
+  } catch (error) {
+    console.error('Error setting hero image: ', error);
+    throw error;
+  }
+};
+
+// Delete the hero image
+export const deleteHeroImage = async () => {
+  try {
+    await deleteDoc(doc(db, 'hero', 'heroImage'));
+  } catch (error) {
+    console.error('Error deleting hero image: ', error);
+    throw error;
+  }
+};
+
+// Add a new blog
+export const addBlog = async (blog: {
+  title: string;
+  content: string;
+  image: string;
+  date: string; 
+}) => {
+  try {
+    const docRef = await addDoc(collection(db, 'blogs'), blog);
+    return docRef.id;
+  } catch (error) {
+    console.error('Error adding blog: ', error);
+    throw error;
+  }
+};
+
+
+// Get all blogs
+export const getBlogs = async () => {
+  try {
+    const querySnapshot = await getDocs(collection(db, 'blogs'));
+    return querySnapshot.docs.map(doc => ({ 
+      id: doc.id, 
+      ...doc.data() 
+    })) as Blog[];
+  } catch (error) {
+    console.error('Error getting blogs: ', error);
+    throw error;
+  }
+};
+
+// Delete a blog
+export const deleteBlog = async (id: string) => {
+  try {
+    await deleteDoc(doc(db, 'blogs', id));
+  } catch (error) {
+    console.error('Error deleting blog: ', error);
+    throw error;
+  }
 };
